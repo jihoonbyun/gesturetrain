@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>모바일 클라이언트 테스트</title>
+		<script src ="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>	
+		<script src="js/socket.io.js"></script> 
+		<!--<script src="g.js"></script>-->
+
+		<script>
+
+
+		var serverUrl = 'http://' + location.host;
+		var socket = io.connect(serverUrl);
+
+
+		// 터치 이벤트 리스너 테스트
+		jQuery(window).on('touchstart',filter);
+		jQuery(window).on('touchend',filter);
+		jQuery(window).on('touchmove',filter );
+
+
+		// 핸드 쉐이킹 성공 여부
+		socket.on('connected', function(data){
+			function filter(e){
+				socket.emit('touch', e);
+			}
+
+		});
+
+		</script>
+
+	</head>
+	<body>
+		<p> 현재 터치된 손의 숫자는 </p>
+		<p id="what" style ="font-size:90px;">READY?</p>
+		<p id="foo" style ="font-size:90px;">READY?</p>
+</body>
+</html>
