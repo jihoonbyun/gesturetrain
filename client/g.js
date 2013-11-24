@@ -202,7 +202,7 @@ function lzw_decode(s) {
 		    moves = [];
 	  
 	  // 현재 움직이는 터치의 갯수를 반복문 돌린다	
-		for(var i=0,mleng = touches.length;i<mleng;i++){
+		for(var i=0,mleng = mov.length;i<mleng;i++){
 
 			// 움직이는 터치의 아이디 추출
 			var movid = mov[i]['identifier']
@@ -228,14 +228,14 @@ function lzw_decode(s) {
   // touchend 핸들러	
 	function toe(e){
 		var end = e.originalEvent.changedTouches,
-		    endid = end['identifier'],
-		    result = parseInt(end.timeStamp - Recordbox[endid]['elpased']);
+		    endid = end[0]['identifier'],
+		    result = parseInt(e.timeStamp - Recordbox[endid]['elapsed']);
 
 	  // 리코드박스에서 끝난 터치의 아이디 찾아서 end에 이벤트객체 넣기	
-		Recordbox[endid]['end'] = end;
+		Recordbox[endid]['end'] = end[0];
 
 		// elapsed에 끝난시간에서 현재 현재시간을 뺀다
-		Recordbox[endid]['elpased'] = result
+		Recordbox[endid]['elapsed'] = result
 
 		// 겟 제스처 함수 실행
 		getGesture(endid);
