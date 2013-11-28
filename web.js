@@ -22,12 +22,12 @@ app.use('/images', express.static(__dirname + '/images'));
 app.use('/models', express.static(__dirname + '/models'));
 app.use('/server', express.static(__dirname + '/server'));
 app.use('/client', express.static(__dirname + '/client'));
-/*
+
 var mysqlConfig = {
 	host : 'localhost',
 	port : '8002',
 	user : 'root',
-	password : ''
+	password : 'zzang1100'
 	//database : ,
 	}
 
@@ -39,8 +39,6 @@ var connect = mysql.createConnection(mysqlConfig)
 		console.log('DB-Success');
 		console.log(rows);
 	});	
-*/	
-
 
 
 // 메인(VIEW) 페이지 설정
@@ -67,50 +65,94 @@ app.get('/socket', function (req, res) {
 });
 
 // 설정파일 로드
-var cfg = require('./config') 
+var config = require('./config') 
 var geo = require('./server/geo');
+
+	
+users = [];
 
 // 서버 소켓 대기
 io.sockets.on('connection', function(socket){
 
+
 	console.log('Client has been Connected');
 
-	socket.emit('config', cfg);
+  socket.emit('config', config);
+	
+	// 1단계 : 유저데이터 
+	socket.on('userdata', function(userdata){
 
-	socket.on('userdata', function(x){
-		var x = x;
-    var reg = userCheck(x);
-		socket.emit('confirm', reg);
+		var sessionid = userdata.sessionid
+		socket.join(sessionid)
 
-		  socket.on('touches', function(bigdata){
-				// 2단계 : 터치데이터를 전송받는다
-				console.log(bigdata);
+		var userdata = userdata;
+    var register = Visitor.userCheck(userdata); // 여기서 geo함수, ip함수 체크한다
+		Visitor.countUsers(userdata);
+		socket.in(sessionid).emit('confirm', register);
+ 
+		  // 2단계 : 터치데이터
+		  socket.on('s', function(touchdata){
+				
+				console.log(touchdata);
+        // 서버는 항상 0 또는 1만 보낸다
+				// touchdata가 비정상적으로 연속적으로 오면 0을(비상모드) 보내서 
+				// 클라이언트 상황을 체크하고 문제있으면 related 및  disconnect 조치
+				socket.in(sessionid).emit('c',1);
 
 		  });
-
-
 	});
+
+ socket.on('disconnect', function () {
+	 //
+  });
 });
 
-function userCheck(usd){
-	
-	var k = guid();
 
-return { 
+Visitor = {
+
+	monitor : { 
+		pc : 0,
+	  mobile : 0,
+		socket : 0
+	},
+
+
+	userCheck : function(usd){
+	
+	var k = Visitor.guid();
+
+  return { 
 	type : 'permitted', 
 	newkey : k
-}
-}
+   }
+  },
 
 
-
-function guid() {
+  guid  : function() {
     function _p8(s) {
         var p = (Math.random().toString(16)+"000000000").substr(2,8);
         return s ? "-" + p.substr(0,4) + "-" + p.substr(4,4) : p ;
     }
     return _p8() + _p8(true) + _p8(true) + _p8();
+},
+
+	countUsers : function(userdata){
+		var device = userdata.device;
+	if(device == 'pc'){
+		Visitor.monitor.pc +=1
+	}
+	if(device == 'mobile'){
+	  Visitor.monitor.mobile +=1
+	}
 }
 
 
+
+
+
+
+
+
+
+}
 

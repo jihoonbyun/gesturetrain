@@ -34,7 +34,7 @@ function getClientinfo(){
 // just send data as ip address
 // identifier change when client session closed 
 // check out is threre's key in localstorage if not 	
-// check ip address
+// @param check ip address
 // check user-agent
 // check geo data(current)
 // check DB
@@ -70,5 +70,23 @@ function sessionClosed(){
 }
 
 
+
+function isObject(target){
+		 if(typeof target == 'object' || typeof target == 'array'){ return true }
+		 else { return false}
+}
+
+	 list ={};
+
+	 function objectCompress(object){
+		 if(typeof object == 'object' || typeof object == 'array'){
+			 for(var i in object){
+
+				 var isobject = isObject(object[i])
+					 if(isobject) { objectCompress(object[i]) } 
+				   else { list[i] = object[i] }
+       }
+		 }
+	 }
 
 

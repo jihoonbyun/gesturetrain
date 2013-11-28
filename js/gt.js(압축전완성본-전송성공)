@@ -6,6 +6,24 @@
   window.addEventListener('touchend', $.rd, false); 
   window.addEventListener('touchmove', $.rd, false);
   */
+//console.log(JSON.stringify(localStorage).length)
+// 터치 이벤트 리스너
+jQuery(window).on('touchstart',filter);
+jQuery(window).on('touchend',filter);
+jQuery(window).on('touchmove',filter);
+
+// 이벤트 필터링
+// 이유는 모르겠으나 필터링을 해줘야함	
+function filter(e){
+	if(e.type == 'touchstart'){ $.rd.tos(e); }
+	if(e.type == 'touchend'){ $.rd.toe(e); }
+	if(e.type == 'touchmove') { $.rd.tom(e); }
+}
+
+function massenger(c){
+
+
+}
 
 /*
  * 서버컨넥션
@@ -15,24 +33,9 @@ var serverUrl = 'http://beagledog11111.cafe24.com:8002';
 var socket = io.connect(serverUrl);
 socket.on('config', function(config){ 
 
-var config = config
-var ud= new $.ud(config);
-var userdata = ud.init 
-var sessionid =io.sockets[serverUrl].sessionid
-	//console.log(JSON.stringify(localStorage).length)
-	// 터치 이벤트 리스너
-jQuery(window).on('touchstart',filter);
-jQuery(window).on('touchend',filter);
-jQuery(window).on('touchmove',filter);
-
-// 이벤트 필터링
-// 이유는 모르겠으나 필터링을 해줘야함	
-function filter(e){
-	if(e.type == 'touchstart'){ $.rd.tos(e); }
-	if(e.type == 'touchend'){ $.rd.toe(e, config, userdata); }
-	if(e.type == 'touchmove') { $.rd.tom(e); }
-}
-
+	var config = config
+	var ud= new $.ud(config);
+  var userdata = ud.init 
 	socket.emit('userdata', userdata);
 
 // 인증을받았을때, 터치데이터 전송을 시작한다
@@ -43,7 +46,7 @@ socket.on('confirm', function(register){
 		var newkey = register.newkey;
 		var exist = ud.isExist();
 
-		// 키가 존재하지 않을떄. 키를 저장한다
+		// 키가 존재하지 않을떄 
 		if(exist == false){
 			ud.saveKey(newkey,config);
 		}
@@ -53,46 +56,19 @@ socket.on('confirm', function(register){
 			ud.changeKey(newkey,config)
 		}
 
-		socket.emit('s', 'The first socket message!');
-		socket.on('c', function(oneorzero){
+		socket.emit('s', 1);
 
-			// 기억하자! 동기적 코딩이니까, 위의 config 변수를 받을 수 있다!
-			 var opt = config.traffic_OPTION
-			 var time = config.traffic_TIME
+		socket.on('c', function(s){
+
+			var rec = localStorage.getItem('recordbox');
+
 			// 정상 전송모드
-			if(oneorzero == 1){
-
-				// 키값과 데이터받아서 해당 데이터 보내고 삭제
-				// 쿠키일경우 바로 보내야하기 떄문에, 바로보낸다
-				function sendGtaa(localid,gtaa){ 
-					socket.emit('s', gtaa );
-					 if(window.localStorage){
-					  localStorage.removeItem(localid);
-				   }	
-					}
-
-				// 모두보내고 로컬 삭제
-				function sendAll(){
-						var rekey = $.rd.getRecordkey();
-						var releng = rekey.length;
-						if(releng >=1){
-						 for(var i=0; i <releng; i++){
-						   var current = localStorage.getItem(rekey[i]);
-							 socket.emit('s', current);
-							 localStorage.removeItem(rekey[i]);	
-					   }
-						}
-					}
-
-				
-				if(opt == 'time'){			
-		     // 현재 로컬에 등록된 아이디박스가 1개 이상일때, setInterval 구동
-		      setInterval( function(){sendAll()},time);
-				}
+			if(s == 1){
+				socket.emit('s', $.rd.Recordbox);
 			}
 
 			// 비상 전송 모드
-			if(oneorzero == 0){
+			if(s == 0){
 				// changing options
 			}
 		});	
@@ -102,8 +78,9 @@ socket.on('confirm', function(register){
 
  var $ = {
 
-  rd : {
 
+  rd : {
+  
   Recordbox : {},
 
   Gesturebox : [],
@@ -155,7 +132,6 @@ socket.on('confirm', function(register){
 
   // lzw 인코딩 디코딩(https://gist.github.com/revolunet/843889)
   lzw_encode : function(s) {
-		//var s =JSON.stringify(s);
     var dict = {}, data = (s + "").split(""), out = [],
         currChar, phrase = data[0], code = 256;
 
@@ -196,7 +172,7 @@ socket.on('confirm', function(register){
         code++;
         oldPhrase = phrase;
     }
-    return out.join("")
+    return out.join("");
   },
 
 
@@ -303,79 +279,19 @@ tom : function(e){
 
 
 // touchend 핸들러	
-toe : function(e,c,u){
+toe : function(e){
 	var end = e.originalEvent.changedTouches,
 	    endlisted = $.rd.listify(end[0])
 			endid = endlisted['identifier'],
 			result = parseInt(e.timeStamp - $.rd.Recordbox[endid]['elapsed']);
-	
-	var storage = u.storage;
-	var soption = c.traffic_OPTION
-	var stage = c.compress_STAGE
-	var maxlocalsize = c.traffic_MAX_STORAGE_KB
-	var lzw = c.compress_LZW
 
 	// 리코드박스에서 끝난 터치의 아이디 찾아서 end에 이벤트객체 넣기	
 	$.rd.Recordbox[endid]['end'] = endlisted;
 
 	// elapsed에 끝난시간에서 현재 현재시간을 뺀다
-	$.rd.Recordbox[endid]['elapsed'] = result 
+	$.rd.Recordbox[endid]['elapsed'] = result
+
   $.rd.Recordbox[endid]['endtime'] = e.timeStamp
-
-	// 레코드 박스에 들어오자마자 바로 압죽데이터 만든다	
-	var data = $.rd.zipIdbox($.rd.Recordbox[endid], stage, lzw) 
-
-	// 로컬에 저장될 아이디를 설정한다
-	var localid = 'gtaa' + endid;
-
-	// 로컬스토리지일경우, 로컬스토리지에 저장시키고 바로 삭제시킨다
-	if(storage == 'localStorage') { 
-		localStorage.setItem(localid, data);
-		delete $.rd.Recordbox[endid]  // 삭제
-	}
-
-	// 쿠키일경우, 저장이 불가능하므로 바로 보내버리고 삭제시킨다
-	if(storage == 'cookie'){
-			sendGtaa(localid,data); // 쿠키일경우 바로보낸다.
-		delete	$.rd.Recordbox[endid] // 삭제
-	}
-
-	// 쿼리일 경우, 설정된 숫자와 현재 로컬에 저장된 아이디박스 갯수를 비교
-	if(soption == 'query' || soption == 'auto' ){
-		var query = c.traffic_QUERY
-		var arrleng = $.rd.getRecordkey().lenth;
-			if(arrleng	>= query){  sendAll() }
-	}
-
-	// 용량일 경우, 로컬스토리지인지 확인하고 현재용량이 맥시멈보다 높을때
-	// 현재 로컬에 저장된 아이디박스를 전부 전송시킨다.
-	if(soption == 'kb' ||  soption == 'auto'){
-		if(storage == 'localStorage'){
-			var currentsize = $.rd.getLocalsize()
-				if(currentsize >= maxlocalsize){
-						 sendAll();
-				 }
-		  }
-	 }
-},
-
-	//gtaa 생성법 : gtaa + 숫자
-	getRecordkey : function(){
-var temp = $.rd.getLocalkeys();
-var current = [];
-var patt =/^gtaa+(\d+)$/;
-for(var i=0, j= temp.length;i<j; i++){
-	if(patt.test(temp[i])) { current.push(temp[i]);}
-}
-return current
-},
-
-getLocalkeys : function(){
-	var temp =[];
-	for(var key in window.localStorage){
-		temp.push(key)
-	}
-	return temp
 },
 
 
@@ -486,125 +402,41 @@ gboxMaker : function(id, windows){
 
     $.rd.Gesturebox.push(gb);
  },
- 
- // zipbox contains
- //
- // 압축생략!!!!!!!!!!!!
- // compress_STAGE = 1
- // identifier, clientX 같은 키값으로 불류 &  압축
- // 총 70개 객체 생성된다.
- // zipbox[0] = stage
- // zipbox[1] = main datas
- // zipbox[2] = [[key][start,move,move,....end], [start,move,end..]]// lzw 압축
- //  ....
- //
- // compress_STAGE = 2
- // 그냥 쑤셔넣고 압축 하는 방법
- // 터치수만큼 객체가 생성된다.
- // 이유는 모르겠지만 성능이 훨씬 탁월하다
- // zipbox[0] = stage
- // zipbox[1] = main datas
- // zipbox[2] = [[key][start][move][end]] //lzw 압축
- //
- //
- //  option = {...compress_LZW : true, compress_STAGE : 2 } 
- //  주.
- //  나중에 꼭 array에 push 하는것 vs 객체 퍼포먼스를 비교해보자
- //  최근 실험에서는 push가 성능이 떨어짐을 본적 이있는데, 사용이 편리하여 일단 사용한다
- //  단순히 함수 성능 뿐만아니라, 로컬에서의 I/O도 고려해야한다.
- zipIdbox : function(idbox, stage, lzw){ 
-		var stage = stage	
-		var lzw = lzw
-		var idbox = idbox,option = option;
-	      zipbox = [], zipobj = {}, start = idbox.start,
-		    move = idbox.move,mains = [], end = idbox.end;
 
-		// 1단계 : 스테이지명
-			zipbox.push([stage])
+ zipIdbox : function(idbox){ 
+				
+		var idbox = idbox;
+	  var savebox = [];
+		var start = idbox.start
+		var slength = 0;
+	
+	  // counting objects numbers	
+		if(start[1]) { var slength = start.length }
+		else { slength = 1; }
 
-				// 2단계 : 메인데이터
-				for(var i in idbox){
-					if( i == 'start'|| i == 'move' || i == 'end') continue;
-					mains.push(idbox[i])
-				}
-			zipbox.push(mains);
-
-		// Count numbers of start, end, move data set
-		if(stage == 1){
-
-			for(var i in start){
-
-				var temp =[];
-
-				//Compress keys
-				keygroup = Object.keys(start)
-					temp.push(keygroup)
-
-					//Compress start data
-					temp.push(start[i])
-
-					//Compress move data	 
-					for(var j in move){
-						temp.push(move[j][i]);
-					}
-				//Compress end data
-					temp.push(end[i]);
-
-					zipbox.push(temp);
-				}
-
-			if(lzw == true){
-				zipbox = $.rd.lzw_encode(zipbox)
-					zipbox = JSON.stringify(zipbox)		
-
-			}
-			else{ zipbox = JSON.stringify(zipbox)	 }
-
-			return  zipbox
-
-
-		}
-
-		if(stage == 2){
-			
+		// savebox에 키 갯수만큼 배열상자를 넣는다
+		for(var i=0; i<list.length; i++){
 			var temp = [];
-			temp.push(Object.keys(start))
-			temp.push(start);
-
-			for(var i=0, j = move.length; i< j; i++){
-				temp.push(move[i]);
-			}
-			temp.push(end)
-		  zipbox.push(temp);
-
-			if(lzw == true){
-					zipbox = JSON.stringify(zipbox)		
-					zipbox = $.rd.lzw_encode(zipbox)
-
-			}
-			else{ zipbox = JSON.stringify(zipbox)	 }
-
-			return  zipbox
-
-
+			savebox.push(temp);
 		}
 
-			
-		},
+	for(var j =0; j<list.length; j++){
+		for(var k =0; k<slength; k++){
+			var st = $.rd.listify(start[j]) // j번쨰 스타트 객체
 
-/*
- * calculate localStorage total size
- * KB
- */ 
-		getLocalsize : function(){
-	var allStrings = '';
-	for(var key in window.localStorage){
-		if(window.localStorage.hasOwnProperty(key)){
-			allStrings += window.localStorage[key];
 		}
 	}
-	return allStrings ? 3 + ((allStrings.length*16)/(8*1024)) : 0;
-},
+
+
+
+
+
+
+
+
+
+
+ },
 
  saveLocal : function(name,data){
 
@@ -651,7 +483,6 @@ gboxMaker : function(id, windows){
 	var config =config;  //$_ = key;
 
 	this.init = {	  
-		sessionid : io.sockets[serverUrl].sessionid,
     // key
 		key_exist : this.isExist(),
     originalkey : this.getKey(),
@@ -667,10 +498,12 @@ gboxMaker : function(id, windows){
 		memoryratio : this.getmemoryRatio(),
 		loadingtime : this.getTimings()
 		}
+  },
+
+  tr : function(controller){
+   // ....localStorage.setItem($.rd.Recordbox)
   }
-
-
-}// end $
+}
 
 
 
